@@ -19,11 +19,14 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    // Browser extensions (screen recorders, password managers) stamp attributes onto <html> before
-    // React hydrates, which reads as a mismatch. Scoped to this element only — it does not suppress
-    // warnings for anything we render inside.
+    // Browser extensions (screen recorders, colour pickers, password managers) stamp attributes
+    // onto <html> and <body> before React hydrates, which reads as a mismatch. Both elements need
+    // this, and it is scoped to them alone — nothing we render inside is affected.
     <html lang="en" suppressHydrationWarning>
-      <body className="min-h-dvh bg-background text-foreground antialiased">
+      <body
+        className="min-h-dvh bg-background text-foreground antialiased"
+        suppressHydrationWarning
+      >
         <Providers>
           <header className="border-b">
             <nav
