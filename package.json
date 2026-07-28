@@ -1,0 +1,10 @@
+{
+  "name": "reba",
+  "private": true,
+  "type": "module",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "bun run --filter '*' dev",
+    "test": "bun test packages/core"
+  }
+}
