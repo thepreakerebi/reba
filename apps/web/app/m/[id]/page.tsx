@@ -80,13 +80,9 @@ export default function MotherPage({ params }: { params: Promise<{ id: string }>
     onError: () => setError("That could not be confirmed. Try again."),
   });
 
+  /** Records the answer only. Moving on is always a deliberate press of Continue. */
   function answerQuestion(signId: string, presence: Presence) {
-    const next = { ...answers, [signId]: presence };
-    setAnswers(next);
-    if (step.name !== "questions") return;
-    // Answering advances on its own — nineteen taps, no scrolling, no separate Next button.
-    if (step.index + 1 < SIGNS.length) setStep({ name: "questions", index: step.index + 1 });
-    else submit.mutate(next);
+    setAnswers((current) => ({ ...current, [signId]: presence }));
   }
 
   function acceptInterpretation(interpretation: Interpretation) {

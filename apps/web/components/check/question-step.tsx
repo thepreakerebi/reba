@@ -9,9 +9,9 @@ import { t } from "@/lib/i18n";
 /**
  * Step two, checklist path: one question per screen.
  *
- * Answering advances automatically, so a full check is nineteen taps and no scrolling. "Finish now"
- * is available from the first question because an unreported sign is simply absent — the protocol
- * scores what was said, never what was skipped.
+ * Selecting an answer marks it; Continue moves on. Nothing advances on its own, so a mis-tap can
+ * always be corrected before it counts. "Finish now" is available from the first question because
+ * an unreported sign is simply absent — the protocol scores what was said, never what was skipped.
  */
 export function QuestionStep({
   index,
@@ -87,9 +87,15 @@ export function QuestionStep({
             <li key={choice.value}>
               <Button
                 type="button"
-                variant={selected === choice.value ? "default" : "outline"}
+                variant="outline"
                 aria-pressed={selected === choice.value}
-                className="h-14 w-full text-lg"
+                // Selection reads as a coloured outline, never a fill — the choice stays a choice
+                // until Continue is pressed.
+                className={`h-14 w-full text-lg ${
+                  selected === choice.value
+                    ? "border-primary text-primary ring-2 ring-primary/30 hover:text-primary"
+                    : ""
+                }`}
                 onClick={() => onAnswer(sign.id, choice.value)}
               >
                 {choice.label}
@@ -104,9 +110,9 @@ export function QuestionStep({
           <Button type="button" variant="ghost" onClick={onBack}>
             ← {copy.back}
           </Button>
-          {/* Answering already advances; Continue is for moving past a question the family cannot
-              judge, and for stepping forward again after going Back. */}
-          <Button type="button" variant="secondary" onClick={onContinue}>
+          {/* Continue is the only way forward. Advancing on tap meant a mis-tap silently recorded
+              an answer and moved on before it could be seen. */}
+          <Button type="button" onClick={onContinue} className="min-w-32">
             {isLast ? copy.seeResult : copy.continue} →
           </Button>
         </nav>
