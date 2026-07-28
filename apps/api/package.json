@@ -1,0 +1,22 @@
+{
+  "name": "@reba/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch --env-file=../../.env src/index.ts",
+    "db:push": "bun --env-file=../../.env x drizzle-kit push",
+    "db:seed": "bun --env-file=../../.env src/db/seed.ts"
+  },
+  "dependencies": {
+    "@google/genai": "latest",
+    "@neondatabase/serverless": "^1.0.0",
+    "@paralleldrive/cuid2": "^2.2.2",
+    "@reba/core": "workspace:*",
+    "drizzle-orm": "^0.44.0",
+    "hono": "^4.6.0"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.0"
+  }
+}
