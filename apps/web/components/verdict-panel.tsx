@@ -1,19 +1,30 @@
 "use client";
 
-import { LEVEL_COPY, getSign, levelDetail, levelWord, signLabel, type Lang, type Verdict } from "@reba/core";
+import { useState } from "react";
+import {
+  LEVEL_COPY,
+  getSign,
+  levelDetail,
+  levelWord,
+  signLabel,
+  type Lang,
+  type Verdict,
+} from "@reba/core";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { LEVEL_STYLE } from "@/lib/level-style";
 import { t } from "@/lib/i18n";
 
 /**
- * The verdict, with its full derivation shown.
+ * The result screen.
  *
- * Everything below the headline is the "show your work" trail: which signs were reported, what the
- * protocol alone said, and every step that raised it — each with the reason it was raised. Nothing
- * here is generated prose; it is the actual structure the engine returned.
+ * Ordered by what a frightened person needs, not by what is interesting: the instruction and the
+ * action come first and fill the screen, the evidence sits below it, and the clinician's handover
+ * is folded away until it is actually needed at the facility.
+ *
+ * The derivation stays on screen rather than behind a toggle — being able to see why Reba said what
+ * it said is the point, not a detail.
  */
 export function VerdictPanel({
   verdict,
@@ -32,104 +43,147 @@ export function VerdictPanel({
 }) {
   const style = LEVEL_STYLE[verdict.level];
   const strings = t(lang);
+  const [copied, setCopied] = useState(false);
   const escalated = verdict.level !== verdict.protocolFloor;
 
-  return (
-    <section
-      aria-labelledby="verdict-heading"
-      aria-live="assertive"
-      className={`rounded-xl border-2 p-4 sm:p-6 ${style.card}`}
-    >
-      <h2 id="verdict-heading" className="text-3xl font-bold tracking-tight sm:text-4xl">
-        <output>
-          {style.mark} {levelWord(verdict.level, lang)}
-        </output>
-      </h2>
-      <p className="mt-1 text-sm font-medium opacity-80">
-        {lang === "rw" ? LEVEL_COPY[verdict.level].en : LEVEL_COPY[verdict.level].rw}
-      </p>
-      <p className="mt-3 max-w-prose text-base">{levelDetail(verdict.level, lang)}</p>
+  async function copyHandover() {
+    if (!handover) return;
+    await navigator.clipboard.writeText(handover);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
-      {verdict.level === "watch" ? (
-        <p className="mt-3 text-sm">
-          {strings.recheckIn} <strong>{verdict.recheckInHours}</strong> {strings.hours}
+  return (
+    <section aria-labelledby="verdict-heading" aria-live="assertive" className="space-y-6">
+      {/* The instruction and the action, together, above everything else. */}
+      <header className={`rounded-2xl border p-6 sm:p-8 ${style.card}`}>
+        <p className="text-sm font-semibold uppercase tracking-widest opacity-60">
+          {lang === "rw" ? LEVEL_COPY[verdict.level].en : LEVEL_COPY[verdict.level].rw}
         </p>
-      ) : null}
+        <h2
+          id="verdict-heading"
+          className="mt-1 flex items-center gap-3 text-4xl font-bold tracking-tight sm:text-5xl"
+        >
+          <output aria-hidden="true">{style.mark}</output>
+          <output>{levelWord(verdict.level, lang)}</output>
+        </h2>
+        <p className="mt-4 max-w-prose text-lg leading-snug">
+          {levelDetail(verdict.level, lang)}
+        </p>
+
+        {verdict.level === "watch" ? (
+          <p className="mt-4 text-base">
+            {strings.recheckIn} <strong className="tabular-nums">{verdict.recheckInHours}</strong>{" "}
+            {strings.hours}
+          </p>
+        ) : null}
+
+        {onAcknowledge ? (
+          <footer className="mt-6">
+            {acknowledged ? (
+              <p className="rounded-lg bg-background/70 px-4 py-3 text-sm font-medium">
+                {strings.confirmed}
+              </p>
+            ) : (
+              <Button
+                onClick={onAcknowledge}
+                disabled={isAcknowledging}
+                className="h-14 w-full text-base sm:w-auto sm:px-10"
+              >
+                {isAcknowledging ? strings.confirming : strings.takingHer}
+              </Button>
+            )}
+          </footer>
+        ) : null}
+      </header>
 
       {verdict.reasons.length > 0 ? (
-        <>
-          <Separator className="my-5" />
-          <h3 className="text-sm font-semibold uppercase tracking-wide opacity-70">
+        <section aria-labelledby="reported-heading" className="rounded-2xl border p-5 sm:p-6">
+          <h3
+            id="reported-heading"
+            className="text-xs font-semibold uppercase tracking-widest text-muted-foreground"
+          >
             {strings.whatReported}
           </h3>
-          <ul className="mt-3 space-y-3">
+          <ul className="mt-4 divide-y">
             {verdict.reasons.map((reason) => {
               const sign = getSign(reason.signId);
               return (
-              <li key={reason.signId}>
-                <p className="font-medium">
-                  {sign ? signLabel(sign, lang) : reason.label}
-                  {reason.assumedPresent ? (
-                    <Badge variant="outline" className="ml-2 align-middle">
-                      {strings.unsureBadge}
-                    </Badge>
-                  ) : null}
-                </p>
-                <p className="mt-0.5 max-w-prose text-sm opacity-80">{reason.because}</p>
-              </li>
+                <li key={reason.signId} className="py-3 first:pt-0 last:pb-0">
+                  <p className="flex flex-wrap items-center gap-2 font-medium">
+                    <mark className={`size-2 rounded-full ${LEVEL_STYLE[reason.level].badge}`} />
+                    {sign ? signLabel(sign, lang) : reason.label}
+                    {reason.assumedPresent ? (
+                      <Badge variant="outline" className="font-normal">
+                        {strings.unsureBadge}
+                      </Badge>
+                    ) : null}
+                  </p>
+                  <p className="mt-1 pl-4 text-sm text-muted-foreground">{reason.because}</p>
+                </li>
               );
             })}
           </ul>
-        </>
+        </section>
       ) : null}
 
-      <Separator className="my-5" />
-      <h3 className="text-sm font-semibold uppercase tracking-wide opacity-70">
-        {strings.howDecided}
-      </h3>
-      <ol className="mt-3 space-y-2 text-sm">
-        <li>
-          <strong>{strings.protocolFloor}:</strong> {levelWord(verdict.protocolFloor, lang)} —{" "}
-          {strings.fromSignsAlone}
-        </li>
-        {verdict.escalations.map((escalation) => (
-          <li key={`${escalation.source}-${escalation.to}`}>
-            <strong>
-              {strings.raisedTo} {levelWord(escalation.to, lang)}:
-            </strong>{" "}
-            {escalation.label}. <em className="opacity-80">{escalation.rationale}</em>
+      <section aria-labelledby="decided-heading" className="rounded-2xl border p-5 sm:p-6">
+        <h3
+          id="decided-heading"
+          className="text-xs font-semibold uppercase tracking-widest text-muted-foreground"
+        >
+          {strings.howDecided}
+        </h3>
+        <ol className="mt-4 space-y-3 text-sm">
+          <li className="flex gap-3">
+            <mark className="mt-1.5 size-1.5 shrink-0 rounded-full bg-muted-foreground" />
+            <p>
+              <strong>{strings.protocolFloor}: {levelWord(verdict.protocolFloor, lang)}</strong>
+              <br />
+              <em className="text-muted-foreground">{strings.fromSignsAlone}</em>
+            </p>
           </li>
-        ))}
-        {!escalated ? <li className="opacity-70">{strings.nothingRaised}</li> : null}
-      </ol>
-      <p className="mt-4 text-xs opacity-70">{strings.onlyRaise}</p>
+          {verdict.escalations.map((escalation) => (
+            <li key={`${escalation.source}-${escalation.to}`} className="flex gap-3">
+              <mark className={`mt-1.5 size-1.5 shrink-0 rounded-full ${style.badge}`} />
+              <p>
+                <strong>
+                  {strings.raisedTo} {levelWord(escalation.to, lang)} — {escalation.label}
+                </strong>
+                <br />
+                <em className="text-muted-foreground">{escalation.rationale}</em>
+              </p>
+            </li>
+          ))}
+          {!escalated ? (
+            <li className="flex gap-3">
+              <mark className="mt-1.5 size-1.5 shrink-0 rounded-full bg-muted" />
+              <p className="text-muted-foreground">{strings.nothingRaised}</p>
+            </li>
+          ) : null}
+        </ol>
+        <p className="mt-4 border-t pt-4 text-xs text-muted-foreground">{strings.onlyRaise}</p>
+      </section>
 
       {handover ? (
-        <>
-          <Separator className="my-5" />
-          <h3 className="text-sm font-semibold uppercase tracking-wide opacity-70">
+        <details className="group rounded-2xl border">
+          <summary className="flex cursor-pointer items-center justify-between gap-3 p-5 text-sm font-semibold sm:p-6">
             {strings.showAtFacility}
-          </h3>
-          <pre className="mt-3 overflow-x-auto rounded-lg bg-background/70 p-3 text-[11px] leading-relaxed sm:p-4 sm:text-xs">
-            {handover}
-          </pre>
-        </>
-      ) : null}
-
-      {onAcknowledge ? (
-        <footer className="mt-6">
-          {acknowledged ? (
-            <p className="text-sm font-medium">{strings.confirmed}</p>
-          ) : (
-            <Button
-              onClick={onAcknowledge}
-              disabled={isAcknowledging}
-              className="h-12 w-full text-base sm:w-auto sm:px-8"
-            >
-              {isAcknowledging ? strings.confirming : strings.takingHer}
-            </Button>
-          )}
-        </footer>
+            <span className="text-muted-foreground transition-transform group-open:rotate-180">
+              ▾
+            </span>
+          </summary>
+          <figure className="border-t px-5 pb-5 pt-4 sm:px-6 sm:pb-6">
+            <pre className="overflow-x-auto rounded-lg bg-muted/50 p-4 font-mono text-[11px] leading-relaxed sm:text-xs">
+              {handover}
+            </pre>
+            <figcaption className="mt-3">
+              <Button type="button" variant="outline" size="sm" onClick={copyHandover}>
+                {copied ? "✓ Copied" : "Copy"}
+              </Button>
+            </figcaption>
+          </figure>
+        </details>
       ) : null}
     </section>
   );

@@ -11,19 +11,19 @@ export const LEVEL_STYLE: Record<
   go_now: {
     mark: "▲",
     word: "Go now",
-    card: "border-red-600 bg-red-50 dark:bg-red-950/40",
+    card: "border-red-200 bg-red-50 text-red-950 dark:border-red-900 dark:bg-red-950/50 dark:text-red-50",
     badge: "bg-red-600 text-white",
   },
   go_today: {
     mark: "●",
     word: "Go today",
-    card: "border-amber-600 bg-amber-50 dark:bg-amber-950/40",
+    card: "border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-50",
     badge: "bg-amber-600 text-white",
   },
   watch: {
     mark: "—",
     word: "Watch",
-    card: "border-emerald-700 bg-emerald-50 dark:bg-emerald-950/40",
+    card: "border-emerald-200 bg-emerald-50 text-emerald-950 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-50",
     badge: "bg-emerald-700 text-white",
   },
 };
