@@ -14,7 +14,8 @@
     "@paralleldrive/cuid2": "^2.2.2",
     "@reba/core": "workspace:*",
     "drizzle-orm": "^0.44.0",
-    "hono": "^4.6.0"
+    "hono": "^4.6.0",
+    "postgres": "^3.4.9"
   },
   "devDependencies": {
     "drizzle-kit": "^0.31.0"

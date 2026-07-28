@@ -61,3 +61,5 @@ async function seed() {
 }
 
 await seed();
+// postgres.js holds the pool open, which would keep this script alive forever.
+process.exit(0);
