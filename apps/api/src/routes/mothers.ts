@@ -18,19 +18,21 @@ const toProfile = (mother: typeof mothers.$inferSelect): MotherProfile => ({
 });
 
 router.get("/", async (c) => {
-  const rows = await db.select().from(mothers).orderBy(desc(mothers.birthAt));
-  const latest = await Promise.all(
-    rows.map(async (mother) => {
-      const [checkin] = await db
-        .select()
-        .from(checkins)
-        .where(eq(checkins.motherId, mother.id))
-        .orderBy(desc(checkins.createdAt))
-        .limit(1);
-      return { ...mother, latestCheckin: checkin ?? null };
-    }),
+  // Two round trips, not one per mother. The watch board is the first thing anyone sees, and a
+  // query per row over a remote database made it take seconds.
+  const [rows, allCheckins] = await Promise.all([
+    db.select().from(mothers).orderBy(desc(mothers.birthAt)),
+    db.select().from(checkins).orderBy(desc(checkins.createdAt)),
+  ]);
+
+  const latestByMother = new Map<string, (typeof allCheckins)[number]>();
+  for (const checkin of allCheckins) {
+    if (!latestByMother.has(checkin.motherId)) latestByMother.set(checkin.motherId, checkin);
+  }
+
+  return c.json(
+    rows.map((mother) => ({ ...mother, latestCheckin: latestByMother.get(mother.id) ?? null })),
   );
-  return c.json(latest);
 });
 
 router.post("/", async (c) => {
