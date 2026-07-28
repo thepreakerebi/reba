@@ -25,6 +25,7 @@ export default function MotherPage({ params }: { params: Promise<{ id: string }>
   const queryClient = useQueryClient();
 
   const [answers, setAnswers] = useState<Answers>({});
+  const [description, setDescription] = useState("");
   const [verdict, setVerdict] = useState<Verdict | null>(null);
   const [checkinId, setCheckinId] = useState<string | null>(null);
   const [handover, setHandover] = useState<string | null>(null);
@@ -37,12 +38,15 @@ export default function MotherPage({ params }: { params: Promise<{ id: string }>
   });
 
   const submit = useMutation({
-    mutationFn: () =>
+    mutationFn: (payload: { text?: string }) =>
       api.submitCheck(id, {
-        answers: SIGNS.filter((sign) => answers[sign.id]).map((sign) => ({
-          signId: sign.id,
-          presence: answers[sign.id],
-        })),
+        ...payload,
+        answers: payload.text
+          ? undefined
+          : SIGNS.filter((sign) => answers[sign.id]).map((sign) => ({
+              signId: sign.id,
+              presence: answers[sign.id],
+            })),
       }),
     onSuccess: (result) => {
       setVerdict(result.verdict);
@@ -123,7 +127,7 @@ export default function MotherPage({ params }: { params: Promise<{ id: string }>
           className="mt-6 space-y-6"
           onSubmit={(event) => {
             event.preventDefault();
-            submit.mutate();
+            submit.mutate({});
           }}
         >
           <ul className="space-y-5">

@@ -7,7 +7,7 @@ import { db } from "../db/client";
 import { checkins, mothers } from "../db/schema";
 import { buildHandover } from "../lib/handover";
 import { broadcastInvalidate } from "../lib/realtime";
-import { extractSigns, geminiConfigured } from "../lib/gemini";
+import { geminiConfigured, interpretAudio, interpretText } from "../lib/gemini";
 
 const router = new Hono();
 
@@ -64,6 +64,39 @@ router.get("/:id", async (c) => {
 });
 
 /**
+ * Interpretation — speech or free text in, a *proposal* out.
+ *
+ * This deliberately saves nothing and produces no verdict. The family sees the transcript and the
+ * signs Reba believes it heard, and has to confirm them before anything is scored. Kinyarwanda
+ * speech recognition is the weakest link in the chain, so it is the one place we insist on a human
+ * reading the machine's work first.
+ */
+router.post("/:id/interpret", async (c) => {
+  if (!geminiConfigured()) {
+    return c.json({ error: "Voice and free text are unavailable. Use the questions instead." }, 503);
+  }
+
+  const body = (await c.req.json()) as {
+    text?: string;
+    audio?: { data: string; mimeType: string };
+  };
+
+  try {
+    const interpretation = body.audio
+      ? await interpretAudio(body.audio)
+      : body.text?.trim()
+        ? await interpretText(body.text)
+        : null;
+
+    if (!interpretation) return c.json({ error: "Nothing to interpret." }, 400);
+    return c.json(interpretation);
+  } catch (error) {
+    console.error(error);
+    return c.json({ error: "That could not be understood. Try again, or use the questions." }, 502);
+  }
+});
+
+/**
  * The daily check.
  *
  * Two intake modes converge on the same triage call: a tap-through checklist, or free text that
@@ -73,22 +106,13 @@ router.post("/:id/checkins", async (c) => {
   const [mother] = await db.select().from(mothers).where(eq(mothers.id, c.req.param("id")));
   if (!mother) return c.json({ error: "Not found" }, 404);
 
-  const body = (await c.req.json()) as { answers?: Answer[]; text?: string };
+  const body = (await c.req.json()) as {
+    answers?: Answer[];
+    intakeMode?: "checklist" | "free_text";
+    rawText?: string;
+  };
 
-  let answers: Answer[] = body.answers ?? [];
-  let intakeMode: "checklist" | "free_text" = "checklist";
-
-  if (body.text?.trim()) {
-    if (!geminiConfigured()) {
-      return c.json(
-        { error: "Free-text intake is unavailable. Use the checklist." },
-        503,
-      );
-    }
-    intakeMode = "free_text";
-    answers = await extractSigns(body.text);
-  }
-
+  const answers: Answer[] = body.answers ?? [];
   const verdict = triage(answers, toProfile(mother));
   const handover =
     verdict.level === "watch" ? null : buildHandover(mother, verdict);
@@ -97,8 +121,8 @@ router.post("/:id/checkins", async (c) => {
     .insert(checkins)
     .values({
       motherId: mother.id,
-      intakeMode,
-      rawText: body.text ?? null,
+      intakeMode: body.intakeMode ?? "checklist",
+      rawText: body.rawText ?? null,
       answers,
       level: verdict.level,
       protocolFloor: verdict.protocolFloor,
