@@ -102,7 +102,8 @@ Reba insists a person checks the machine's work before anything is scored.
 ### Prerequisites
 
 - [Bun](https://bun.sh) 1.3+
-- A Neon Postgres database
+- Postgres — Docker locally, Neon in production. The same driver handles both; only
+  `DATABASE_URL` changes.
 - A Gemini API key from [Google AI Studio](https://aistudio.google.com) (free tier is enough)
 
 ### Install
@@ -129,6 +130,16 @@ NEXT_PUBLIC_API_URL="http://localhost:3001"
 ```
 
 ### Set up the database
+
+Locally, run Postgres in Docker:
+
+```bash
+docker run -d --name reba-db \
+  -e POSTGRES_USER=reba -e POSTGRES_PASSWORD=reba -e POSTGRES_DB=reba \
+  -p 5434:5432 postgres:16-alpine
+```
+
+Then create the tables and load demo data:
 
 ```bash
 cd apps/api
