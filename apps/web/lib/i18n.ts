@@ -22,8 +22,8 @@ export const T = {
     speak: "Speak or type instead",
     speakIntro:
       "Describe how she is in your own words, in Kinyarwanda or English. Reba will show you what it heard before anything is decided.",
-    record: "Hold to speak",
-    recording: "Listening… release to stop",
+    record: "Tap to speak",
+    recording: "Listening… tap to stop",
     listening: "Reading what you said…",
     heard: "This is what Reba heard",
     heardNote: "Check this is right before continuing. Correct anything wrong in the questions below.",
@@ -51,6 +51,7 @@ export const T = {
     micDenied: "Reba needs permission to use the microphone. Type instead, or allow it and try again.",
     micUnsupported: "This phone cannot record here. Type instead.",
     interpretFailed: "That could not be understood. Try again, or use the questions.",
+    tooShort: "That was too short to hear. Speak for a little longer.",
   },
   rw: {
     todaysCheck: "Isuzuma ry'uyu munsi",
@@ -66,7 +67,7 @@ export const T = {
     speakIntro:
       "Sobanura uko amerewe mu magambo yawe, mu Kinyarwanda cyangwa mu Cyongereza. Reba izakwereka ibyo yumvise mbere y'uko hafatwa icyemezo.",
     record: "Kanda uvuge",
-    recording: "Turimo kumva… rekura urangije",
+    recording: "Turimo kumva… kanda urangije",
     listening: "Turimo gusoma ibyo wavuze…",
     heard: "Ibi ni byo Reba yumvise",
     heardNote:
@@ -97,6 +98,7 @@ export const T = {
       "Reba ikeneye uruhushya rwo gukoresha mikoro. Andika, cyangwa utange uruhushya wongere ugerageze.",
     micUnsupported: "Iyi telefone ntishobora gufata amajwi hano. Andika ahubwo.",
     interpretFailed: "Ntibyumvikanye. Ongera ugerageze, cyangwa ukoreshe ibibazo.",
+    tooShort: "Byari bigufi cyane ntibyumvikane. Ongera uvuge igihe kirekire gato.",
   },
 } satisfies Record<Lang, Record<string, string>>;
 

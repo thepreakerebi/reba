@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { API_URL } from "@/lib/api";
 import { t } from "@/lib/i18n";
+import { blobToWav } from "@/lib/wav";
 
 export type Interpretation = {
   transcript: string;
@@ -77,16 +78,17 @@ export function VoiceIntake({
       recorder.onstop = async () => {
         for (const track of stream.getTracks()) track.stop();
         const blob = new Blob(chunksRef.current, { type: recorder.mimeType });
-        const buffer = await blob.arrayBuffer();
-        const binary = Array.from(new Uint8Array(buffer), (byte) =>
-          String.fromCharCode(byte),
-        ).join("");
-        await send({
-          audio: {
-            data: btoa(binary),
-            mimeType: recorder.mimeType.split(";")[0] || "audio/webm",
-          },
-        });
+        try {
+          // Re-encoded to WAV because the API rejects the WebM container browsers record into.
+          const audio = await blobToWav(blob);
+          if (!audio) {
+            setError(copy.tooShort);
+            return;
+          }
+          await send({ audio });
+        } catch {
+          setError(copy.interpretFailed);
+        }
       };
       recorder.start();
       recorderRef.current = recorder;
@@ -116,11 +118,11 @@ export function VoiceIntake({
           className="h-12 w-full text-base sm:w-52"
           disabled={isBusy}
           aria-pressed={isRecording}
-          onPointerDown={startRecording}
-          onPointerUp={stopRecording}
-          onPointerLeave={isRecording ? stopRecording : undefined}
+          // Tap to start, tap to stop. Hold-to-talk drops the recording the moment a finger slides
+          // off the button, which is exactly what happens on a phone in a hurry.
+          onClick={() => (isRecording ? stopRecording() : void startRecording())}
         >
-          {isRecording ? copy.recording : isBusy ? copy.listening : `🎙 ${copy.record}`}
+          {isRecording ? `⏹ ${copy.recording}` : isBusy ? copy.listening : `🎙 ${copy.record}`}
         </Button>
 
         <form
