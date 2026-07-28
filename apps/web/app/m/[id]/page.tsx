@@ -209,11 +209,9 @@ export default function MotherPage({ params }: { params: Promise<{ id: string }>
             acknowledged={acknowledged}
             onAcknowledge={verdict.level === "watch" ? undefined : () => acknowledge.mutate()}
             isAcknowledging={acknowledge.isPending}
+            onRestart={restart}
           />
           <footer className="flex flex-col gap-2 sm:flex-row">
-            <Button type="button" variant="outline" className="h-12" onClick={restart}>
-              {strings.startOver}
-            </Button>
             {intakeMode === "free_text" ? (
               <Button
                 type="button"

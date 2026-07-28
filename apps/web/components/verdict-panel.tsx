@@ -33,6 +33,7 @@ export function VerdictPanel({
   acknowledged,
   onAcknowledge,
   isAcknowledging,
+  onRestart,
 }: {
   verdict: Verdict;
   lang: Lang;
@@ -40,6 +41,7 @@ export function VerdictPanel({
   acknowledged?: boolean;
   onAcknowledge?: () => void;
   isAcknowledging?: boolean;
+  onRestart?: () => void;
 }) {
   const style = LEVEL_STYLE[verdict.level];
   const strings = t(lang);
@@ -78,9 +80,9 @@ export function VerdictPanel({
           </p>
         ) : null}
 
-        {onAcknowledge ? (
-          <footer className="mt-6">
-            {acknowledged ? (
+        <footer className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+          {onAcknowledge ? (
+            acknowledged ? (
               <p className="rounded-lg bg-background/70 px-4 py-3 text-sm font-medium">
                 {strings.confirmed}
               </p>
@@ -92,9 +94,19 @@ export function VerdictPanel({
               >
                 {isAcknowledging ? strings.confirming : strings.takingHer}
               </Button>
-            )}
-          </footer>
-        ) : null}
+            )
+          ) : null}
+          {onRestart ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onRestart}
+              className="h-14 w-full bg-background/60 text-base sm:w-auto sm:px-8"
+            >
+              {strings.startOver}
+            </Button>
+          ) : null}
+        </footer>
       </header>
 
       {verdict.reasons.length > 0 ? (
