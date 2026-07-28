@@ -79,7 +79,7 @@ export default function MotherPage({ params }: { params: Promise<{ id: string }>
   return (
     <article className="space-y-8">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight">{mother.name}</h1>
+        <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{mother.name}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {postpartumLabel(mother.birthAt)} ·{" "}
           {mother.deliveryType === "caesarean" ? "Caesarean section" : "Vaginal delivery"} ·{" "}
@@ -132,7 +132,9 @@ export default function MotherPage({ params }: { params: Promise<{ id: string }>
                 <fieldset>
                   <legend className="text-base font-medium">{sign.question.en}</legend>
                   <p className="mt-0.5 text-sm text-muted-foreground">{sign.question.rw}</p>
-                  <ul className="mt-2 flex flex-wrap gap-2">
+                  {/* Three equal targets, each at least 48px tall — thumb-sized, since this is
+                      answered on a phone, often one-handed, often at night. */}
+                  <ul className="mt-3 grid grid-cols-3 gap-2">
                     {CHOICES.map((choice) => {
                       const selected = answers[sign.id] === choice.value;
                       return (
@@ -140,8 +142,8 @@ export default function MotherPage({ params }: { params: Promise<{ id: string }>
                           <Button
                             type="button"
                             variant={selected ? "default" : "outline"}
-                            size="sm"
                             aria-pressed={selected}
+                            className="h-12 w-full text-base"
                             onClick={() =>
                               setAnswers((current) => ({ ...current, [sign.id]: choice.value }))
                             }
@@ -159,12 +161,18 @@ export default function MotherPage({ params }: { params: Promise<{ id: string }>
 
           {error ? <p className="text-sm font-medium text-red-600">{error}</p> : null}
 
-          <footer className="flex items-center gap-4">
-            <Button type="submit" disabled={submit.isPending || answered === 0}>
+          {/* Sticky on every size: there are 19 questions, and the family should never have to
+              scroll to the bottom to find out how to finish. */}
+          <footer className="sticky bottom-0 -mx-4 flex items-center gap-4 border-t bg-background/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
+            <Button
+              type="submit"
+              disabled={submit.isPending || answered === 0}
+              className="h-12 flex-1 text-base sm:flex-none sm:px-8"
+            >
               {submit.isPending ? "Checking…" : "Finish check"}
             </Button>
-            <p className="text-sm text-muted-foreground">
-              {answered} of {SIGNS.length} answered
+            <p className="text-sm tabular-nums text-muted-foreground">
+              {answered} of {SIGNS.length}
             </p>
           </footer>
         </form>
@@ -179,7 +187,7 @@ export default function MotherPage({ params }: { params: Promise<{ id: string }>
             {mother.checkins.map((checkin) => (
               <li
                 key={checkin.id}
-                className="flex flex-wrap items-baseline justify-between gap-3 rounded-lg border px-4 py-3 text-sm"
+                className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 rounded-lg border px-4 py-3 text-sm"
               >
                 <time dateTime={checkin.createdAt}>
                   {new Date(checkin.createdAt).toLocaleString()}

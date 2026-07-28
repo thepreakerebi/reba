@@ -35,9 +35,9 @@ export function VerdictPanel({
     <section
       aria-labelledby="verdict-heading"
       aria-live="assertive"
-      className={`rounded-xl border-2 p-6 ${style.card}`}
+      className={`rounded-xl border-2 p-4 sm:p-6 ${style.card}`}
     >
-      <h2 id="verdict-heading" className="text-3xl font-bold tracking-tight">
+      <h2 id="verdict-heading" className="text-3xl font-bold tracking-tight sm:text-4xl">
         <output>
           {style.mark} {copy.en}
         </output>
@@ -102,7 +102,7 @@ export function VerdictPanel({
           <h3 className="text-sm font-semibold uppercase tracking-wide opacity-70">
             Show this at the facility
           </h3>
-          <pre className="mt-3 overflow-x-auto rounded-lg bg-background/70 p-4 text-xs leading-relaxed">
+          <pre className="mt-3 overflow-x-auto rounded-lg bg-background/70 p-3 text-[11px] leading-relaxed sm:p-4 sm:text-xs">
             {handover}
           </pre>
         </>
@@ -115,7 +115,11 @@ export function VerdictPanel({
               ✓ The family confirmed they are taking her. Her health worker has been notified.
             </p>
           ) : (
-            <Button onClick={onAcknowledge} disabled={isAcknowledging}>
+            <Button
+              onClick={onAcknowledge}
+              disabled={isAcknowledging}
+              className="h-12 w-full text-base sm:w-auto sm:px-8"
+            >
               {isAcknowledging ? "Confirming…" : "We are taking her now"}
             </Button>
           )}

@@ -31,7 +31,7 @@ export default function WatchBoard() {
   return (
     <section aria-labelledby="board-heading">
       <header className="mb-6">
-        <h1 id="board-heading" className="text-2xl font-semibold tracking-tight">
+        <h1 id="board-heading" className="text-xl font-semibold tracking-tight sm:text-2xl">
           Watch board
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
@@ -70,7 +70,7 @@ export default function WatchBoard() {
                   <Link href={`/m/${mother.id}`} className="block h-full rounded-xl">
                     <Card className={`h-full ${style ? style.card : ""}`}>
                       <CardHeader>
-                        <CardTitle className="flex items-baseline justify-between gap-3">
+                        <CardTitle className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-2">
                           {mother.name}
                           {style ? (
                             <Badge className={style.badge}>

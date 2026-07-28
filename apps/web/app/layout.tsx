@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 
 import { Providers } from "./providers";
@@ -10,6 +10,13 @@ export const metadata: Metadata = {
     "A postpartum danger-sign companion for the family, covering the 42 days after discharge.",
 };
 
+// The family uses this on a phone, often one-handed and in a hurry. Zoom stays enabled.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
@@ -18,7 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <header className="border-b">
             <nav
               aria-label="Main"
-              className="mx-auto flex max-w-5xl items-baseline gap-6 px-6 py-4"
+              className="mx-auto flex max-w-5xl items-baseline gap-4 px-4 py-4 sm:gap-6 sm:px-6"
             >
               <Link href="/" className="text-lg font-semibold tracking-tight">
                 Reba
@@ -26,7 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <p className="hidden text-sm text-muted-foreground sm:block">
                 Kinyarwanda: <em>look</em>
               </p>
-              <ul className="ml-auto flex items-center gap-5 text-sm">
+              <ul className="ml-auto flex items-center gap-4 text-sm sm:gap-5">
                 <li>
                   <Link href="/" className="hover:underline">
                     Watch board
@@ -40,8 +47,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </ul>
             </nav>
           </header>
-          <main className="mx-auto max-w-5xl px-6 py-8">{children}</main>
-          <footer className="mx-auto max-w-5xl px-6 py-10">
+          <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">{children}</main>
+          <footer className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
             <p className="text-xs text-muted-foreground">
               Reba is a triage prompt built on the WHO postnatal danger-sign protocol. It is not a
               diagnosis and never replaces a health worker.

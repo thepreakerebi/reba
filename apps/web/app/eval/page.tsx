@@ -35,7 +35,7 @@ export default function EvalPage() {
   return (
     <section aria-labelledby="eval-heading">
       <header className="mb-6">
-        <h1 id="eval-heading" className="text-2xl font-semibold tracking-tight">
+        <h1 id="eval-heading" className="text-xl font-semibold tracking-tight sm:text-2xl">
           Evaluation
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
@@ -44,8 +44,8 @@ export default function EvalPage() {
         </p>
       </header>
 
-      <dl className="grid gap-4 sm:grid-cols-4">
-        <section className="rounded-xl border-2 border-emerald-700 bg-emerald-50 p-4 dark:bg-emerald-950/40">
+      <dl className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+        <section className="col-span-2 rounded-xl border-2 border-emerald-700 bg-emerald-50 p-4 dark:bg-emerald-950/40 lg:col-span-1">
           <dt className="text-sm font-medium">Emergency recall</dt>
           <dd className="mt-1 text-3xl font-bold tabular-nums">
             <output>{percent(data.emergencyRecall)}</output>
