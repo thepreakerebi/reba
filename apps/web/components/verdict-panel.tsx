@@ -98,18 +98,21 @@ export function VerdictPanel({
       </header>
 
       {verdict.reasons.length > 0 ? (
-        <section aria-labelledby="reported-heading" className="rounded-2xl border p-5 sm:p-6">
-          <h3
-            id="reported-heading"
-            className="text-xs font-semibold uppercase tracking-widest text-muted-foreground"
-          >
+        <details className="group rounded-2xl border" open>
+          <summary className="flex cursor-pointer items-center justify-between gap-3 p-5 text-sm font-semibold sm:p-6">
             {strings.whatReported}
-          </h3>
-          <ul className="mt-4 divide-y">
+            <span className="flex items-center gap-3 text-muted-foreground">
+              <Badge variant="secondary" className="tabular-nums">
+                {verdict.reasons.length}
+              </Badge>
+              <span className="transition-transform group-open:rotate-180">▾</span>
+            </span>
+          </summary>
+          <ul className="divide-y border-t px-5 pb-5 sm:px-6 sm:pb-6">
             {verdict.reasons.map((reason) => {
               const sign = getSign(reason.signId);
               return (
-                <li key={reason.signId} className="py-3 first:pt-0 last:pb-0">
+                <li key={reason.signId} className="py-3">
                   <p className="flex flex-wrap items-center gap-2 font-medium">
                     <mark className={`size-2 rounded-full ${LEVEL_STYLE[reason.level].badge}`} />
                     {sign ? signLabel(sign, lang) : reason.label}
@@ -124,7 +127,7 @@ export function VerdictPanel({
               );
             })}
           </ul>
-        </section>
+        </details>
       ) : null}
 
       <section aria-labelledby="decided-heading" className="rounded-2xl border p-5 sm:p-6">
