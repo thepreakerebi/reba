@@ -3,7 +3,14 @@
 import { use, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Verdict } from "@reba/core";
-import { SIGNS, getRiskFactor, type Presence, type RiskFactorId } from "@reba/core";
+import {
+  SIGNS,
+  getRiskFactor,
+  signLabel,
+  type Lang,
+  type Presence,
+  type RiskFactorId,
+} from "@reba/core";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,21 +18,20 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { VerdictPanel } from "@/components/verdict-panel";
 import { api } from "@/lib/api";
 import { LEVEL_STYLE, postpartumLabel } from "@/lib/level-style";
+import { t } from "@/lib/i18n";
+import { VoiceIntake, type Interpretation } from "@/components/voice-intake";
 
 type Answers = Record<string, Presence>;
-
-const CHOICES: { value: Presence; label: string }[] = [
-  { value: "yes", label: "Yes" },
-  { value: "no", label: "No" },
-  { value: "unsure", label: "Not sure" },
-];
 
 export default function MotherPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const queryClient = useQueryClient();
 
   const [answers, setAnswers] = useState<Answers>({});
-  const [description, setDescription] = useState("");
+  // Set from what the family actually said. The header switch is only there to correct it.
+  const [lang, setLang] = useState<Lang>("en");
+  const [intakeMode, setIntakeMode] = useState<"checklist" | "free_text">("checklist");
+  const [rawText, setRawText] = useState<string | null>(null);
   const [verdict, setVerdict] = useState<Verdict | null>(null);
   const [checkinId, setCheckinId] = useState<string | null>(null);
   const [handover, setHandover] = useState<string | null>(null);
@@ -38,15 +44,14 @@ export default function MotherPage({ params }: { params: Promise<{ id: string }>
   });
 
   const submit = useMutation({
-    mutationFn: (payload: { text?: string }) =>
+    mutationFn: () =>
       api.submitCheck(id, {
-        ...payload,
-        answers: payload.text
-          ? undefined
-          : SIGNS.filter((sign) => answers[sign.id]).map((sign) => ({
-              signId: sign.id,
-              presence: answers[sign.id],
-            })),
+        intakeMode,
+        rawText: rawText ?? undefined,
+        answers: SIGNS.filter((sign) => answers[sign.id]).map((sign) => ({
+          signId: sign.id,
+          presence: answers[sign.id],
+        })),
       }),
     onSuccess: (result) => {
       setVerdict(result.verdict);
@@ -79,6 +84,23 @@ export default function MotherPage({ params }: { params: Promise<{ id: string }>
   }
 
   const answered = Object.keys(answers).length;
+  const strings = t(lang);
+  const CHOICES: { value: Presence; label: string }[] = [
+    { value: "yes", label: strings.yes },
+    { value: "no", label: strings.no },
+    { value: "unsure", label: strings.unsure },
+  ];
+
+  /** Voice and free text land here as answers the family has already confirmed. */
+  function acceptInterpretation(interpretation: Interpretation) {
+    setAnswers((current) => {
+      const next = { ...current };
+      for (const answer of interpretation.answers) next[answer.signId] = answer.presence;
+      return next;
+    });
+    setIntakeMode("free_text");
+    setRawText(interpretation.transcript);
+  }
 
   return (
     <article className="space-y-8">
@@ -104,9 +126,17 @@ export default function MotherPage({ params }: { params: Promise<{ id: string }>
         )}
       </header>
 
+      <VoiceIntake
+        motherId={id}
+        lang={lang}
+        onLanguageDetected={setLang}
+        onAccept={acceptInterpretation}
+      />
+
       {verdict ? (
         <VerdictPanel
           verdict={verdict}
+          lang={lang}
           handover={handover}
           acknowledged={acknowledged}
           onAcknowledge={verdict.level === "watch" ? undefined : () => acknowledge.mutate()}
@@ -115,27 +145,45 @@ export default function MotherPage({ params }: { params: Promise<{ id: string }>
       ) : null}
 
       <section aria-labelledby="check-heading">
-        <h2 id="check-heading" className="text-lg font-semibold">
-          Today&rsquo;s check
-        </h2>
-        <p className="mt-1 max-w-prose text-sm text-muted-foreground">
-          Answer what you can see. If you are not sure, say so — Reba treats &ldquo;not sure&rdquo;
-          exactly the same as &ldquo;yes&rdquo;.
-        </p>
+        <header className="flex flex-wrap items-baseline justify-between gap-3">
+          <h2 id="check-heading" className="text-lg font-semibold">
+            {strings.todaysCheck}
+          </h2>
+          <ul className="flex gap-1 text-sm" aria-label="Language">
+            {(["en", "rw"] as Lang[]).map((option) => (
+              <li key={option}>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={lang === option ? "secondary" : "ghost"}
+                  aria-pressed={lang === option}
+                  onClick={() => setLang(option)}
+                >
+                  {option === "en" ? "English" : "Kinyarwanda"}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </header>
+        <p className="mt-1 max-w-prose text-sm text-muted-foreground">{strings.checkIntro}</p>
 
         <form
           className="mt-6 space-y-6"
           onSubmit={(event) => {
             event.preventDefault();
-            submit.mutate({});
+            submit.mutate();
           }}
         >
           <ul className="space-y-5">
             {SIGNS.map((sign) => (
               <li key={sign.id}>
                 <fieldset>
-                  <legend className="text-base font-medium">{sign.question.en}</legend>
-                  <p className="mt-0.5 text-sm text-muted-foreground">{sign.question.rw}</p>
+                  <legend className="text-base font-medium">
+                    {lang === "rw" ? sign.question.rw : sign.question.en}
+                  </legend>
+                  <p className="mt-0.5 text-sm text-muted-foreground">
+                    {lang === "rw" ? sign.question.en : sign.question.rw}
+                  </p>
                   {/* Three equal targets, each at least 48px tall — thumb-sized, since this is
                       answered on a phone, often one-handed, often at night. */}
                   <ul className="mt-3 grid grid-cols-3 gap-2">
@@ -173,7 +221,7 @@ export default function MotherPage({ params }: { params: Promise<{ id: string }>
               disabled={submit.isPending || answered === 0}
               className="h-12 flex-1 text-base sm:flex-none sm:px-8"
             >
-              {submit.isPending ? "Checking…" : "Finish check"}
+              {submit.isPending ? strings.checking : strings.finish}
             </Button>
             <p className="text-sm tabular-nums text-muted-foreground">
               {answered} of {SIGNS.length}
@@ -185,7 +233,7 @@ export default function MotherPage({ params }: { params: Promise<{ id: string }>
       {mother.checkins.length > 0 ? (
         <section aria-labelledby="history-heading">
           <h2 id="history-heading" className="text-lg font-semibold">
-            Earlier checks
+            {strings.earlierChecks}
           </h2>
           <ul className="mt-4 space-y-2">
             {mother.checkins.map((checkin) => (
@@ -198,8 +246,13 @@ export default function MotherPage({ params }: { params: Promise<{ id: string }>
                 </time>
                 <p className="text-muted-foreground">
                   {checkin.reasons.length === 0
-                    ? "No signs reported"
-                    : checkin.reasons.map((reason) => reason.label).join(" · ")}
+                    ? strings.noSignsReported
+                    : checkin.reasons
+                        .map((reason) => {
+                          const sign = SIGNS.find((item) => item.id === reason.signId);
+                          return sign ? signLabel(sign, lang) : reason.label;
+                        })
+                        .join(" · ")}
                 </p>
                 <Badge className={LEVEL_STYLE[checkin.level].badge}>
                   {LEVEL_STYLE[checkin.level].word}

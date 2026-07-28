@@ -1,11 +1,12 @@
 "use client";
 
-import { LEVEL_COPY, type Verdict } from "@reba/core";
+import { LEVEL_COPY, getSign, levelDetail, levelWord, signLabel, type Lang, type Verdict } from "@reba/core";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { LEVEL_STYLE } from "@/lib/level-style";
+import { t } from "@/lib/i18n";
 
 /**
  * The verdict, with its full derivation shown.
@@ -16,19 +17,21 @@ import { LEVEL_STYLE } from "@/lib/level-style";
  */
 export function VerdictPanel({
   verdict,
+  lang,
   handover,
   acknowledged,
   onAcknowledge,
   isAcknowledging,
 }: {
   verdict: Verdict;
+  lang: Lang;
   handover?: string | null;
   acknowledged?: boolean;
   onAcknowledge?: () => void;
   isAcknowledging?: boolean;
 }) {
   const style = LEVEL_STYLE[verdict.level];
-  const copy = LEVEL_COPY[verdict.level];
+  const strings = t(lang);
   const escalated = verdict.level !== verdict.protocolFloor;
 
   return (
@@ -39,15 +42,17 @@ export function VerdictPanel({
     >
       <h2 id="verdict-heading" className="text-3xl font-bold tracking-tight sm:text-4xl">
         <output>
-          {style.mark} {copy.en}
+          {style.mark} {levelWord(verdict.level, lang)}
         </output>
       </h2>
-      <p className="mt-1 text-sm font-medium opacity-80">{copy.rw}</p>
-      <p className="mt-3 max-w-prose text-base">{copy.detail}</p>
+      <p className="mt-1 text-sm font-medium opacity-80">
+        {lang === "rw" ? LEVEL_COPY[verdict.level].en : LEVEL_COPY[verdict.level].rw}
+      </p>
+      <p className="mt-3 max-w-prose text-base">{levelDetail(verdict.level, lang)}</p>
 
       {verdict.level === "watch" ? (
         <p className="mt-3 text-sm">
-          Check her again in <strong>{verdict.recheckInHours} hours</strong>.
+          {strings.recheckIn} <strong>{verdict.recheckInHours}</strong> {strings.hours}
         </p>
       ) : null}
 
@@ -55,52 +60,55 @@ export function VerdictPanel({
         <>
           <Separator className="my-5" />
           <h3 className="text-sm font-semibold uppercase tracking-wide opacity-70">
-            What was reported
+            {strings.whatReported}
           </h3>
           <ul className="mt-3 space-y-3">
-            {verdict.reasons.map((reason) => (
+            {verdict.reasons.map((reason) => {
+              const sign = getSign(reason.signId);
+              return (
               <li key={reason.signId}>
                 <p className="font-medium">
-                  {reason.label}
+                  {sign ? signLabel(sign, lang) : reason.label}
                   {reason.assumedPresent ? (
                     <Badge variant="outline" className="ml-2 align-middle">
-                      counted as present — family was unsure
+                      {strings.unsureBadge}
                     </Badge>
                   ) : null}
                 </p>
                 <p className="mt-0.5 max-w-prose text-sm opacity-80">{reason.because}</p>
               </li>
-            ))}
+              );
+            })}
           </ul>
         </>
       ) : null}
 
       <Separator className="my-5" />
       <h3 className="text-sm font-semibold uppercase tracking-wide opacity-70">
-        How this was decided
+        {strings.howDecided}
       </h3>
       <ol className="mt-3 space-y-2 text-sm">
         <li>
-          <strong>Protocol floor:</strong> {LEVEL_COPY[verdict.protocolFloor].en} — from the reported
-          signs alone, before anything about her was applied.
+          <strong>{strings.protocolFloor}:</strong> {levelWord(verdict.protocolFloor, lang)} —{" "}
+          {strings.fromSignsAlone}
         </li>
         {verdict.escalations.map((escalation) => (
           <li key={`${escalation.source}-${escalation.to}`}>
-            <strong>Raised to {LEVEL_COPY[escalation.to].en}:</strong> {escalation.label}.{" "}
-            <em className="opacity-80">{escalation.rationale}</em>
+            <strong>
+              {strings.raisedTo} {levelWord(escalation.to, lang)}:
+            </strong>{" "}
+            {escalation.label}. <em className="opacity-80">{escalation.rationale}</em>
           </li>
         ))}
-        {!escalated ? <li className="opacity-70">Nothing raised it above the protocol floor.</li> : null}
+        {!escalated ? <li className="opacity-70">{strings.nothingRaised}</li> : null}
       </ol>
-      <p className="mt-4 text-xs opacity-70">
-        Her history can only raise this level. There is no path in Reba that lowers it.
-      </p>
+      <p className="mt-4 text-xs opacity-70">{strings.onlyRaise}</p>
 
       {handover ? (
         <>
           <Separator className="my-5" />
           <h3 className="text-sm font-semibold uppercase tracking-wide opacity-70">
-            Show this at the facility
+            {strings.showAtFacility}
           </h3>
           <pre className="mt-3 overflow-x-auto rounded-lg bg-background/70 p-3 text-[11px] leading-relaxed sm:p-4 sm:text-xs">
             {handover}
@@ -111,16 +119,14 @@ export function VerdictPanel({
       {onAcknowledge ? (
         <footer className="mt-6">
           {acknowledged ? (
-            <p className="text-sm font-medium">
-              ✓ The family confirmed they are taking her. Her health worker has been notified.
-            </p>
+            <p className="text-sm font-medium">{strings.confirmed}</p>
           ) : (
             <Button
               onClick={onAcknowledge}
               disabled={isAcknowledging}
               className="h-12 w-full text-base sm:w-auto sm:px-8"
             >
-              {isAcknowledging ? "Confirming…" : "We are taking her now"}
+              {isAcknowledging ? strings.confirming : strings.takingHer}
             </Button>
           )}
         </footer>

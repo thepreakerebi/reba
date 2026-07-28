@@ -46,7 +46,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const api = {
   mothers: () => request<MotherRow[]>("/api/mothers"),
   mother: (id: string) => request<MotherDetail>(`/api/mothers/${id}`),
-  submitCheck: (id: string, payload: { answers?: unknown[]; text?: string }) =>
+  submitCheck: (
+    id: string,
+    payload: {
+      answers?: unknown[];
+      intakeMode?: "checklist" | "free_text";
+      rawText?: string;
+    },
+  ) =>
     request<{ checkin: Checkin; verdict: Verdict }>(`/api/mothers/${id}/checkins`, {
       method: "POST",
       body: JSON.stringify(payload),
