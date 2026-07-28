@@ -1,5 +1,13 @@
 import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 import Link from "next/link";
+
+// Self-hosted by next/font, so no external request at runtime.
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
 
 import { Providers } from "./providers";
 import "./globals.css";
@@ -22,9 +30,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     // Browser extensions (screen recorders, colour pickers, password managers) stamp attributes
     // onto <html> and <body> before React hydrates, which reads as a mismatch. Both elements need
     // this, and it is scoped to them alone — nothing we render inside is affected.
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
       <body
-        className="min-h-dvh bg-background text-foreground antialiased"
+        className="min-h-dvh bg-background font-sans text-foreground antialiased"
         suppressHydrationWarning
       >
         <Providers>
