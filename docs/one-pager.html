@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    --ground: #FBFAF7;
+    --panel: #FFFFFF;
+    --ink: #17140F;
+    --muted: #6B6459;
+    --line: #E3DFD6;
+    --red: #B23A2B;
+    --amber: #B07A16;
+    --green: #3F7048;
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: 1240px;
+    height: 1754px;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .pad { padding: 0 54px; }
+
+  /* ---- masthead ---- */
+  header {
+    padding: 36px 54px 26px;
+    border-bottom: 1px solid var(--line);
+    position: relative;
+  }
+  .triage-rail {
+    position: absolute; left: 0; top: 0; bottom: 0; width: 10px;
+    background: linear-gradient(180deg,
+      var(--red) 0 33.3%, var(--amber) 33.3% 66.6%, var(--green) 66.6% 100%);
+  }
+  .eyebrow {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 12px; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 18px;
+  }
+  .eyebrow strong { color: var(--ink); font-weight: 600; }
+  h1 {
+    font-size: 70px; line-height: .92; letter-spacing: -.035em; font-weight: 700;
+  }
+  h1 em { font-style: normal; color: var(--muted); font-weight: 400; }
+  .kicker {
+    margin-top: 14px; font-size: 23px; line-height: 1.3; letter-spacing: -.015em;
+    max-width: 880px; font-weight: 500;
+  }
+  .sub { margin-top: 10px; font-size: 15px; color: var(--muted); }
+
+  /* ---- stat band ---- */
+  .stats {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    border-bottom: 1px solid var(--line);
+  }
+  .stat { padding: 18px 26px; border-right: 1px solid var(--line); }
+  .stat:last-child { border-right: 0; }
+  .stat b { display: block; font-size: 40px; letter-spacing: -.04em; line-height: 1; font-weight: 700; }
+  .stat span { display: block; margin-top: 7px; font-size: 13px; color: var(--muted); line-height: 1.35; }
+
+  /* ---- body grid ---- */
+  main {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+  .col { padding: 24px 54px; }
+  .col + .col { border-left: 1px solid var(--line); }
+
+  section + section { margin-top: 20px; }
+
+  h2 {
+    font-size: 11.5px; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--muted); font-weight: 700; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 9px;
+  }
+  h2::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+  p { font-size: 15px; }
+  p + p { margin-top: 9px; }
+  .lead { font-size: 16px; }
+
+  mark { background: #F6E7C8; color: inherit; padding: 0 2px; border-radius: 2px; }
+  .hi { color: var(--red); font-weight: 600; }
+
+  ul { list-style: none; }
+  li { position: relative; padding-left: 20px; font-size: 15px; }
+  li + li { margin-top: 9px; }
+  li::before {
+    content: ""; position: absolute; left: 0; top: 8px;
+    width: 7px; height: 7px; border-radius: 50%; background: var(--ink);
+  }
+  li b { font-weight: 600; }
+  li span { color: var(--muted); }
+
+  /* verdict chips */
+  .verdicts { display: flex; gap: 8px; margin: 14px 0 4px; }
+  .v {
+    flex: 1; border-radius: 9px; padding: 11px 12px; color: #fff;
+    font-weight: 700; font-size: 16px; letter-spacing: -.01em;
+  }
+  .v small { display: block; font-weight: 500; font-size: 11.5px; opacity: .85; margin-top: 2px; }
+  .v.now { background: var(--red); }
+  .v.today { background: var(--amber); }
+  .v.watch { background: var(--green); }
+
+  /* rules panel */
+  .rules { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; }
+  .rules ol { list-style: none; counter-reset: r; }
+  .rules li { padding-left: 27px; font-size: 14.5px; }
+  .rules li + li { margin-top: 10px; }
+  .rules li::before {
+    counter-increment: r; content: counter(r);
+    width: 19px; height: 19px; border-radius: 50%;
+    background: var(--ink); color: #fff; top: 1px;
+    font-size: 11px; font-weight: 700; display: grid; place-items: center;
+  }
+
+  /* how-it-works flow */
+  .flow { counter-reset: f; display: grid; gap: 8px; }
+  .flow p {
+    position: relative; padding: 10px 12px 10px 42px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    font-size: 14.5px; font-weight: 600;
+  }
+  .flow p::before {
+    counter-increment: f; content: counter(f);
+    position: absolute; left: 12px; top: 11px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--ink); color: #fff;
+    font-size: 11px; font-weight: 700; display: grid; place-items: center;
+  }
+  .flow p span { display: block; font-weight: 400; color: var(--muted); font-size: 13px; margin-top: 1px; }
+
+  /* team */
+  .team { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+  .team > p { font-size: 17px; font-weight: 700; letter-spacing: -.01em; margin-bottom: 12px; }
+  .team > p span { display: block; font-size: 13px; font-weight: 400; color: var(--muted); margin-top: 2px; }
+
+  /* tech chips */
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    border: 1px solid var(--line); background: var(--panel);
+    border-radius: 999px; padding: 5px 11px; font-size: 13px;
+  }
+  .chip.key { border-color: var(--ink); font-weight: 600; }
+
+  /* demo */
+  .demo { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .demo-row { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; padding: 13px 18px; }
+  .demo-row + .demo-row { border-top: 1px solid var(--line); }
+  .demo-row p { font-size: 14.5px; }
+  .demo-row p span { color: var(--muted); display: block; font-size: 13px; margin-top: 1px; }
+  .tag { border-radius: 7px; padding: 6px 11px; color: #fff; font-weight: 700; font-size: 13.5px; white-space: nowrap; }
+  .tag.today { background: var(--amber); }
+  .tag.now { background: var(--red); }
+
+  /* ---- footer ---- */
+  footer {
+    border-top: 1px solid var(--line);
+    padding: 14px 54px;
+    flex-shrink: 0;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px; color: var(--muted);
+  }
+  .cov { display: flex; gap: 6px; }
+  .cov span { border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; background: var(--panel); }
+</style>
+</head>
+<body>
+
+<header>
+  <i class="triage-rail"></i>
+  <p class="eyebrow">
+    <span>Frontiers Gen-AI Hackathon &middot; Kigali &middot; 28 July 2026</span>
+    <span>Track 3 — AI &amp; Consumer Technology &nbsp;|&nbsp; Team <strong>Overfit &amp; Chill</strong></span>
+  </p>
+  <h1>Reba<em>.</em></h1>
+  <p class="kicker">
+    The six weeks after birth are when mothers die and nobody is watching.
+    This puts a trained eye in the room — the family's.
+  </p>
+  <p class="sub">
+    Kinyarwanda: <em>look, watch</em> &nbsp;·&nbsp; A postpartum danger-sign companion for the 42 days after discharge.
+  </p>
+</header>
+
+<section class="stats">
+  <p class="stat"><b>60%+</b><span>of maternal deaths happen <em>after</em> birth</span></p>
+  <p class="stat"><b>45%</b><span>of those, within the first 24 hours</span></p>
+  <p class="stat"><b>9%</b><span>of mothers are seen within 2 days (LMIC)</span></p>
+  <p class="stat"><b>28%</b><span>of maternal deaths: haemorrhage (sub-Saharan Africa)</span></p>
+</section>
+
+<main>
+  <!-- LEFT -->
+  <div class="col">
+    <section>
+      <h2>The problem</h2>
+      <p class="lead">
+        She is discharged 24 hours after giving birth and goes home. From that moment until her
+        postnatal check — if she gets one — <mark>nobody is monitoring her.</mark>
+      </p>
+      <p>
+        The family is standing right there. They just cannot tell normal from emergency, because every
+        danger sign is also something a new mother is <em>expected</em> to have: bleeding, headache,
+        swelling, fever, feeling low. So they wait.
+      </p>
+      <p>
+        Haemorrhage kills in <span class="hi">2–3 hours</span>. Pre-eclampsia can appear up to
+        <span class="hi">six weeks</span> after delivery. It is a recognition problem, held by
+        untrained people, on a clock measured in hours.
+      </p>
+    </section>
+
+    <section>
+      <h2>Target market</h2>
+      <ul>
+        <li><b>Users:</b> <span>the husband, mother or sister of each of Rwanda's ~400,000 mothers a year — for 42 days.</span></li>
+        <li><b>Buyer:</b> <span>Ministry of Health, RSSB, and CHW-programme funders. Avoided emergency admissions are their line item, not the family's.</span></li>
+        <li><b>Beachhead, not ceiling:</b> <span>sub-Saharan Africa carries 70% of global maternal deaths; the 2-day coverage gap is region-wide. Rwanda is where it can be proven, because its CHW network is the strongest.</span></li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>The solution</h2>
+      <p>A 30-second daily check, answered by <b>tapping, typing, or speaking</b> — in Kinyarwanda or English, detected automatically. It returns one of three things, and only three:</p>
+      <div class="verdicts">
+        <p class="v now">▲ Go now<small>Nearest facility, immediately</small></p>
+        <p class="v today">● Go today<small>Seen by a health worker today</small></p>
+        <p class="v watch">— Watch<small>Re-check in N hours</small></p>
+      </div>
+      <p>Urgent verdicts generate a structured <b>handover summary</b> for the facility, and her community health worker's board turns red live.</p>
+    </section>
+
+    <section>
+      <h2>How it works</h2>
+      <div class="flow">
+        <p><b>Speak, type or tap</b><span>Kinyarwanda or English, detected automatically</span></p>
+        <p><b>Gemini reads the signs</b><span>constrained to the protocol's fixed sign list</span></p>
+        <p><b>The family confirms</b><span>nothing is scored until they read it back</span></p>
+        <p><b>Engine decides &amp; shows why</b><span>protocol floor → combinations → escalation only</span></p>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- RIGHT -->
+  <div class="col">
+    <section>
+      <h2>Core features</h2>
+      <ul>
+        <li><b>Voice intake in Kinyarwanda</b> <span>— browsers have no Kinyarwanda ASR, so audio goes to Gemini, which transcribes and reads the signs in one pass.</span></li>
+        <li><b>Confirm before scoring</b> <span>— the family reads back what Reba heard before anything is triaged.</span></li>
+        <li><b>Escalation-only personalization</b> <span>— her ANC risk factors can raise urgency, never lower it.</span></li>
+        <li><b>Every verdict shows its derivation</b> <span>— protocol floor, then each escalation with its reason.</span></li>
+        <li><b>Live CHW watch board</b> <span>— cards re-sort by urgency over SSE, no refresh.</span></li>
+        <li><b>Live evaluation page</b> <span>— golden vignettes scored on every load.</span></li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Responsible AI &amp; ethics</h2>
+      <div class="rules">
+        <ol>
+          <li><b>The model never decides.</b> Gemini only maps words onto protocol sign IDs, enum-constrained so an off-protocol sign is unrepresentable. The verdict is pure TypeScript from the WHO postnatal danger-sign protocol.</li>
+          <li><b>Personalization can only escalate.</b> Enforced by a monotonic max — <em>there is no de-escalation function in the codebase</em>, proven by a test brute-forcing all 19 signs against all 9 risk factors.</li>
+          <li><b>Uncertainty escalates.</b> "Not sure" is scored exactly as "yes". There is no "you are fine" verdict — the floor is Watch, and Reba never tells anyone not to seek care.</li>
+        </ol>
+      </div>
+    </section>
+
+    <section>
+      <h2>Tech stack</h2>
+      <div class="chips">
+        <span class="chip key">Gemini 3.6 Flash</span>
+        <span class="chip key">@google/genai</span>
+        <span class="chip">Bun</span>
+        <span class="chip">Hono</span>
+        <span class="chip">Next.js</span>
+        <span class="chip">TanStack Query</span>
+        <span class="chip">shadcn/ui</span>
+        <span class="chip">Drizzle</span>
+        <span class="chip">Postgres / Neon</span>
+        <span class="chip">SSE</span>
+        <span class="chip">WebAudio → WAV</span>
+      </div>
+    </section>
+
+    <section>
+      <h2>Demo scenario</h2>
+      <p style="margin-bottom:12px">The same single sign — a severe headache on day 30 — reported for two different mothers:</p>
+      <div class="demo">
+        <div class="demo-row">
+          <p>Uwase Claudine<span>Severe headache. Nothing on her card.</span></p>
+          <p class="tag today">Go today</p>
+        </div>
+        <div class="demo-row">
+          <p>Umutoni Jeanne<span>Same headache — prior pre-eclampsia on her card.</span></p>
+          <p class="tag now">Go now</p>
+        </div>
+      </div>
+      <p style="margin-top:10px">The panel names what raised it. The reverse is structurally impossible.</p>
+    </section>
+
+    <section>
+      <h2>Team</h2>
+      <div class="team">
+        <p><b>Overfit &amp; Chill</b><span>Frontiers Gen-AI Hackathon · Kigali · 2026</span></p>
+        <div class="chips">
+          <span class="chip">UI/UX</span>
+          <span class="chip">Engineering</span>
+          <span class="chip">Grounding</span>
+          <span class="chip">Innovation</span>
+          <span class="chip">Africa fit</span>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <span>github.com/thepreakerebi/reba &nbsp;·&nbsp; <strong>100% recall on emergency cases</strong>, 0 invariant violations</span>
+  <span>Reba is a triage prompt built on the WHO postnatal danger-sign protocol. It is not a diagnosis.</span>
+</footer>
+
+</body>
+</html>
