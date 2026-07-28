@@ -30,13 +30,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     // Browser extensions (screen recorders, colour pickers, password managers) stamp attributes
     // onto <html> and <body> before React hydrates, which reads as a mismatch. Both elements need
     // this, and it is scoped to them alone — nothing we render inside is affected.
-    <html lang="en" className={inter.variable} suppressHydrationWarning>
+    // scroll-pt keeps anchored content clear of the sticky header.
+    <html
+      lang="en"
+      className={`${inter.variable} scroll-pt-20`}
+      suppressHydrationWarning
+    >
       <body
         className="min-h-dvh bg-background font-sans text-foreground antialiased"
         suppressHydrationWarning
       >
         <Providers>
-          <header className="border-b">
+          <header className="sticky top-0 z-50 border-b bg-background/85 backdrop-blur-md">
             <nav
               aria-label="Main"
               className="mx-auto flex max-w-5xl items-baseline gap-4 px-4 py-4 sm:gap-6 sm:px-6"
