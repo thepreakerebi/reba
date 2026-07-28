@@ -31,23 +31,43 @@ export function raise(from: Level, steps = 1): Level {
   return LEVELS[next];
 }
 
-export const LEVEL_COPY: Record<Level, { en: string; rw: string; detail: string }> = {
+/** The two languages Reba answers in. It replies in whichever one the family used. */
+export type Lang = "en" | "rw";
+
+export const LEVEL_COPY: Record<
+  Level,
+  { en: string; rw: string; detail: string; detailRw: string }
+> = {
   go_now: {
     en: "Go now",
     rw: "Jya ubu",
     detail: "Take her to the nearest health facility immediately. Do not wait for morning.",
+    detailRw:
+      "Mujyane ku kigo nderabuzima cyegereye ako kanya. Ntimutegereze ko bucya.",
   },
   go_today: {
     en: "Go today",
     rw: "Jya uyu munsi",
     detail: "She needs to be seen by a health worker today. Do not wait for her next appointment.",
+    detailRw:
+      "Akeneye kubonana n'umuganga uyu munsi. Ntimutegereze itariki yo gusubira mu kigo nderabuzima.",
   },
   watch: {
     en: "Watch",
     rw: "Komeza umurebe",
     detail: "Nothing needs a visit right now. Check her again and watch for the signs listed below.",
+    detailRw:
+      "Nta kimwihutirwa ubu. Ongera umusuzume, kandi witegereze ibimenyetso bikurikira.",
   },
 };
+
+export function levelWord(level: Level, lang: Lang): string {
+  return lang === "rw" ? LEVEL_COPY[level].rw : LEVEL_COPY[level].en;
+}
+
+export function levelDetail(level: Level, lang: Lang): string {
+  return lang === "rw" ? LEVEL_COPY[level].detailRw : LEVEL_COPY[level].detail;
+}
 
 /** Hours until the next check-in prompt. Tighter early, tighter when urgency is higher. */
 export function recheckHours(level: Level, hoursSinceBirth: number): number {

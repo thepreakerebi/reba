@@ -250,6 +250,38 @@ export const SIGNS: Sign[] = [
   },
 ];
 
+/**
+ * Kinyarwanda short labels, kept as a side map rather than a field on `Sign` so the protocol table
+ * above stays readable. Every id in SIGNS must appear here — asserted by test.
+ *
+ * These were not written by a first-language speaker. They need a review pass before real use.
+ */
+export const SIGN_LABEL_RW: Record<string, string> = {
+  heavy_bleeding: "Ava amaraso menshi (ipadi irenze imwe mu isaha)",
+  passing_large_clots: "Asohora amaraso yafatanye manini",
+  bleeding_increasing: "Amaraso ariyongera cyangwa yasubiye gutukura",
+  fainting_or_dizzy: "Ataye ubwenge cyangwa agira isereri",
+  severe_headache: "Umutwe umubabaza cyane kandi ntugende",
+  blurred_vision: "Amaso areba ibicu cyangwa abona imirabyo",
+  new_swelling: "Kubyimba gushya mu maso cyangwa mu ntoki",
+  convulsion: "Yagize igicuri",
+  difficulty_breathing: "Agorwa no guhumeka",
+  fever: "Umuriro cyangwa imbeho n'ubuhehesi",
+  foul_discharge: "Ibimusohokamo binuka nabi",
+  severe_abdominal_pain: "Ububabare bukaze mu nda yo hasi",
+  calf_pain: "Ukuguru kumwe kubabaza, gutukura cyangwa kubyimba",
+  chest_pain: "Ububabare mu gatuza",
+  breast_infection: "Ibere ritukura, rishyushye kandi ribabaza",
+  wound_problem: "Igisebe gitukuye, gifunguka cyangwa gisohora amashyira",
+  cannot_care_for_baby: "Ntashobora kwita ku mwana, cyangwa afite ibitekerezo byo kwiyangiza",
+  persistent_low_mood: "Kubabara no kurira igihe kinini",
+  not_passing_urine: "Ntashobora kwihagarika cyangwa birababaza",
+};
+
+export function signLabel(sign: Sign, lang: "en" | "rw"): string {
+  return lang === "rw" ? (SIGN_LABEL_RW[sign.id] ?? sign.label) : sign.label;
+}
+
 export const SIGN_IDS = SIGNS.map((sign) => sign.id);
 
 const BY_ID = new Map(SIGNS.map((sign) => [sign.id, sign]));

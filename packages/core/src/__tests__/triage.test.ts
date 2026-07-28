@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { escalate, raise, LEVELS, rank } from "../levels";
-import { SIGNS, SIGN_IDS } from "../protocol";
+import { escalate, raise, LEVELS, rank, levelDetail, levelWord } from "../levels";
+import { SIGNS, SIGN_IDS, SIGN_LABEL_RW, signLabel } from "../protocol";
 import { RISK_FACTORS, type MotherProfile } from "../profile";
 import { triage, type Answer } from "../triage";
 import { GOLDEN_CASES, caseProfile } from "../golden";
@@ -74,6 +74,24 @@ describe("off-protocol input cannot reach the verdict", () => {
 
   test("SIGN_IDS matches SIGNS and has no duplicates", () => {
     expect(new Set(SIGN_IDS).size).toBe(SIGNS.length);
+  });
+});
+
+describe("both languages are complete", () => {
+  test("every sign has a Kinyarwanda label and question", () => {
+    for (const sign of SIGNS) {
+      expect(SIGN_LABEL_RW[sign.id]).toBeTruthy();
+      expect(sign.question.rw).toBeTruthy();
+      expect(signLabel(sign, "rw")).not.toBe(sign.label);
+    }
+  });
+
+  test("every level has Kinyarwanda copy", () => {
+    for (const level of LEVELS) {
+      expect(levelWord(level, "rw")).toBeTruthy();
+      expect(levelDetail(level, "rw")).toBeTruthy();
+      expect(levelDetail(level, "rw")).not.toBe(levelDetail(level, "en"));
+    }
   });
 });
 
