@@ -66,13 +66,9 @@ export async function extractSigns(text: string): Promise<ExtractedAnswer[]> {
 
   const result = await ai.interactions.create({
     model: MODEL,
-    input: [
-      { role: "system", content: SYSTEM },
-      {
-        role: "user",
-        content: `Signs you may report:\n${catalogue}\n\nDescription:\n${text}`,
-      },
-    ],
+    // `interactions.create` takes the prompt as a plain string on this API version — a turn list is
+    // rejected, so the instructions ride at the top of the single input.
+    input: `${SYSTEM}\n\nSigns you may report:\n${catalogue}\n\nDescription:\n${text}`,
     response_format: {
       type: "text",
       mime_type: "application/json",
