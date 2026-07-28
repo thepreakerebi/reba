@@ -1,42 +1,50 @@
 "use client";
 
 import { use, useState } from "react";
+import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Verdict } from "@reba/core";
-import {
-  SIGNS,
-  getRiskFactor,
-  signLabel,
-  type Lang,
-  type Presence,
-  type RiskFactorId,
-} from "@reba/core";
+import { SIGNS, getRiskFactor, type Lang, type Presence, type RiskFactorId, type Verdict } from "@reba/core";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VerdictPanel } from "@/components/verdict-panel";
+import { ModeStep } from "@/components/check/mode-step";
+import { QuestionStep } from "@/components/check/question-step";
+import { VoiceStep, type Interpretation } from "@/components/check/voice-step";
 import { api } from "@/lib/api";
-import { LEVEL_STYLE, postpartumLabel } from "@/lib/level-style";
+import { postpartumLabel } from "@/lib/level-style";
 import { t } from "@/lib/i18n";
-import { VoiceIntake, type Interpretation } from "@/components/voice-intake";
 
-type Answers = Record<string, Presence>;
+/**
+ * The daily check, as a flow.
+ *
+ * One decision per screen: how to answer → answer → what to do. The family is worried and on a
+ * phone; a single page holding nineteen questions and a verdict at once is the wrong shape for that.
+ */
+type Step =
+  | { name: "mode" }
+  | { name: "voice" }
+  | { name: "questions"; index: number }
+  | { name: "result" };
 
 export default function MotherPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const queryClient = useQueryClient();
 
-  const [answers, setAnswers] = useState<Answers>({});
-  // Set from what the family actually said. The header switch is only there to correct it.
+  const [step, setStep] = useState<Step>({ name: "mode" });
   const [lang, setLang] = useState<Lang>("en");
+  const [answers, setAnswers] = useState<Record<string, Presence>>({});
   const [intakeMode, setIntakeMode] = useState<"checklist" | "free_text">("checklist");
   const [rawText, setRawText] = useState<string | null>(null);
+
   const [verdict, setVerdict] = useState<Verdict | null>(null);
   const [checkinId, setCheckinId] = useState<string | null>(null);
   const [handover, setHandover] = useState<string | null>(null);
   const [acknowledged, setAcknowledged] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const strings = t(lang);
 
   const { data: mother, isPending } = useQuery({
     queryKey: ["mother", id],
@@ -44,13 +52,13 @@ export default function MotherPage({ params }: { params: Promise<{ id: string }>
   });
 
   const submit = useMutation({
-    mutationFn: () =>
+    mutationFn: (finalAnswers: Record<string, Presence>) =>
       api.submitCheck(id, {
         intakeMode,
         rawText: rawText ?? undefined,
-        answers: SIGNS.filter((sign) => answers[sign.id]).map((sign) => ({
+        answers: SIGNS.filter((sign) => finalAnswers[sign.id]).map((sign) => ({
           signId: sign.id,
-          presence: answers[sign.id],
+          presence: finalAnswers[sign.id],
         })),
       }),
     onSuccess: (result) => {
@@ -59,7 +67,9 @@ export default function MotherPage({ params }: { params: Promise<{ id: string }>
       setHandover(result.checkin.handover);
       setAcknowledged(false);
       setError(null);
+      setStep({ name: "result" });
       void queryClient.invalidateQueries({ queryKey: ["mothers"] });
+      void queryClient.invalidateQueries({ queryKey: ["mother", id] });
     },
     onError: () => setError("The check could not be saved. Try again."),
   });
@@ -69,6 +79,35 @@ export default function MotherPage({ params }: { params: Promise<{ id: string }>
     onSuccess: () => setAcknowledged(true),
     onError: () => setError("That could not be confirmed. Try again."),
   });
+
+  function answerQuestion(signId: string, presence: Presence) {
+    const next = { ...answers, [signId]: presence };
+    setAnswers(next);
+    if (step.name !== "questions") return;
+    // Answering advances on its own — nineteen taps, no scrolling, no separate Next button.
+    if (step.index + 1 < SIGNS.length) setStep({ name: "questions", index: step.index + 1 });
+    else submit.mutate(next);
+  }
+
+  function acceptInterpretation(interpretation: Interpretation) {
+    const next = { ...answers };
+    for (const answer of interpretation.answers) next[answer.signId] = answer.presence;
+    setAnswers(next);
+    setIntakeMode("free_text");
+    setRawText(interpretation.transcript);
+    submit.mutate(next);
+  }
+
+  function restart() {
+    setAnswers({});
+    setVerdict(null);
+    setCheckinId(null);
+    setHandover(null);
+    setAcknowledged(false);
+    setIntakeMode("checklist");
+    setRawText(null);
+    setStep({ name: "mode" });
+  }
 
   if (isPending) {
     return (
@@ -83,33 +122,18 @@ export default function MotherPage({ params }: { params: Promise<{ id: string }>
     return <p className="text-sm text-muted-foreground">This mother could not be found.</p>;
   }
 
-  const answered = Object.keys(answers).length;
-  const strings = t(lang);
-  const CHOICES: { value: Presence; label: string }[] = [
-    { value: "yes", label: strings.yes },
-    { value: "no", label: strings.no },
-    { value: "unsure", label: strings.unsure },
-  ];
-
-  /** Voice and free text land here as answers the family has already confirmed. */
-  function acceptInterpretation(interpretation: Interpretation) {
-    setAnswers((current) => {
-      const next = { ...current };
-      for (const answer of interpretation.answers) next[answer.signId] = answer.presence;
-      return next;
-    });
-    setIntakeMode("free_text");
-    setRawText(interpretation.transcript);
-  }
-
   return (
     <article className="space-y-8">
-      <header>
-        <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{mother.name}</h1>
+      <header className="border-b pb-5">
+        <nav aria-label="Back to board">
+          <Link href="/" className="text-sm text-muted-foreground hover:underline">
+            ← Watch board
+          </Link>
+        </nav>
+        <h1 className="mt-2 text-xl font-semibold tracking-tight sm:text-2xl">{mother.name}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {postpartumLabel(mother.birthAt)} ·{" "}
-          {mother.deliveryType === "caesarean" ? "Caesarean section" : "Vaginal delivery"} ·{" "}
-          {mother.facility}
+          {mother.deliveryType === "caesarean" ? "Caesarean section" : "Vaginal delivery"}
         </p>
         {mother.riskFactors.length > 0 ? (
           <ul className="mt-3 flex flex-wrap gap-1.5">
@@ -121,35 +145,10 @@ export default function MotherPage({ params }: { params: Promise<{ id: string }>
               </li>
             ))}
           </ul>
-        ) : (
-          <p className="mt-3 text-sm text-muted-foreground">No risk factors on her card.</p>
-        )}
-      </header>
+        ) : null}
 
-      <VoiceIntake
-        motherId={id}
-        lang={lang}
-        onLanguageDetected={setLang}
-        onAccept={acceptInterpretation}
-      />
-
-      {verdict ? (
-        <VerdictPanel
-          verdict={verdict}
-          lang={lang}
-          handover={handover}
-          acknowledged={acknowledged}
-          onAcknowledge={verdict.level === "watch" ? undefined : () => acknowledge.mutate()}
-          isAcknowledging={acknowledge.isPending}
-        />
-      ) : null}
-
-      <section aria-labelledby="check-heading">
-        <header className="flex flex-wrap items-baseline justify-between gap-3">
-          <h2 id="check-heading" className="text-lg font-semibold">
-            {strings.todaysCheck}
-          </h2>
-          <ul className="flex gap-1 text-sm" aria-label="Language">
+        {step.name === "mode" ? (
+          <ul className="mt-4 flex gap-1 text-sm" aria-label="Language">
             {(["en", "rw"] as Lang[]).map((option) => (
               <li key={option}>
                 <Button
@@ -164,102 +163,67 @@ export default function MotherPage({ params }: { params: Promise<{ id: string }>
               </li>
             ))}
           </ul>
-        </header>
-        <p className="mt-1 max-w-prose text-sm text-muted-foreground">{strings.checkIntro}</p>
+        ) : null}
+      </header>
 
-        <form
-          className="mt-6 space-y-6"
-          onSubmit={(event) => {
-            event.preventDefault();
-            submit.mutate();
-          }}
-        >
-          <ul className="space-y-5">
-            {SIGNS.map((sign) => (
-              <li key={sign.id}>
-                <fieldset>
-                  <legend className="text-base font-medium">
-                    {lang === "rw" ? sign.question.rw : sign.question.en}
-                  </legend>
-                  <p className="mt-0.5 text-sm text-muted-foreground">
-                    {lang === "rw" ? sign.question.en : sign.question.rw}
-                  </p>
-                  {/* Three equal targets, each at least 48px tall — thumb-sized, since this is
-                      answered on a phone, often one-handed, often at night. */}
-                  <ul className="mt-3 grid grid-cols-3 gap-2">
-                    {CHOICES.map((choice) => {
-                      const selected = answers[sign.id] === choice.value;
-                      return (
-                        <li key={choice.value}>
-                          <Button
-                            type="button"
-                            variant={selected ? "default" : "outline"}
-                            aria-pressed={selected}
-                            className="h-12 w-full text-base"
-                            onClick={() =>
-                              setAnswers((current) => ({ ...current, [sign.id]: choice.value }))
-                            }
-                          >
-                            {choice.label}
-                          </Button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </fieldset>
-              </li>
-            ))}
-          </ul>
+      {error ? <p className="text-sm font-medium text-red-600">{error}</p> : null}
 
-          {error ? <p className="text-sm font-medium text-red-600">{error}</p> : null}
-
-          {/* Sticky on every size: there are 19 questions, and the family should never have to
-              scroll to the bottom to find out how to finish. */}
-          <footer className="sticky bottom-0 -mx-4 flex items-center gap-4 border-t bg-background/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
-            <Button
-              type="submit"
-              disabled={submit.isPending || answered === 0}
-              className="h-12 flex-1 text-base sm:flex-none sm:px-8"
-            >
-              {submit.isPending ? strings.checking : strings.finish}
+      {submit.isPending ? (
+        <section className="space-y-3">
+          <Skeleton className="h-10 w-56" />
+          <Skeleton className="h-40 w-full rounded-xl" />
+        </section>
+      ) : step.name === "mode" ? (
+        <ModeStep
+          lang={lang}
+          onChoose={(mode) =>
+            setStep(mode === "voice" ? { name: "voice" } : { name: "questions", index: 0 })
+          }
+        />
+      ) : step.name === "voice" ? (
+        <VoiceStep
+          motherId={id}
+          lang={lang}
+          onLanguageDetected={setLang}
+          onAccept={acceptInterpretation}
+          onBack={() => setStep({ name: "mode" })}
+        />
+      ) : step.name === "questions" ? (
+        <QuestionStep
+          index={step.index}
+          lang={lang}
+          answers={answers}
+          onAnswer={answerQuestion}
+          onBack={() =>
+            setStep(step.index === 0 ? { name: "mode" } : { name: "questions", index: step.index - 1 })
+          }
+          onFinish={() => submit.mutate(answers)}
+        />
+      ) : verdict ? (
+        <section className="space-y-6">
+          <VerdictPanel
+            verdict={verdict}
+            lang={lang}
+            handover={handover}
+            acknowledged={acknowledged}
+            onAcknowledge={verdict.level === "watch" ? undefined : () => acknowledge.mutate()}
+            isAcknowledging={acknowledge.isPending}
+          />
+          <footer className="flex flex-col gap-2 sm:flex-row">
+            <Button type="button" variant="outline" className="h-12" onClick={restart}>
+              {strings.startOver}
             </Button>
-            <p className="text-sm tabular-nums text-muted-foreground">
-              {answered} of {SIGNS.length}
-            </p>
-          </footer>
-        </form>
-      </section>
-
-      {mother.checkins.length > 0 ? (
-        <section aria-labelledby="history-heading">
-          <h2 id="history-heading" className="text-lg font-semibold">
-            {strings.earlierChecks}
-          </h2>
-          <ul className="mt-4 space-y-2">
-            {mother.checkins.map((checkin) => (
-              <li
-                key={checkin.id}
-                className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 rounded-lg border px-4 py-3 text-sm"
+            {intakeMode === "free_text" ? (
+              <Button
+                type="button"
+                variant="ghost"
+                className="h-12"
+                onClick={() => setStep({ name: "questions", index: 0 })}
               >
-                <time dateTime={checkin.createdAt}>
-                  {new Date(checkin.createdAt).toLocaleString()}
-                </time>
-                <p className="text-muted-foreground">
-                  {checkin.reasons.length === 0
-                    ? strings.noSignsReported
-                    : checkin.reasons
-                        .map((reason) => {
-                          const sign = SIGNS.find((item) => item.id === reason.signId);
-                          return sign ? signLabel(sign, lang) : reason.label;
-                        })
-                        .join(" · ")}
-                </p>
-                <Badge className={LEVEL_STYLE[checkin.level].badge}>
-                  {LEVEL_STYLE[checkin.level].word}
-                </Badge>
-              </li>
-            ))}
-          </ul>
+                {strings.reviewAnswers}
+              </Button>
+            ) : null}
+          </footer>
         </section>
       ) : null}
     </article>
