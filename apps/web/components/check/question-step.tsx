@@ -19,6 +19,7 @@ export function QuestionStep({
   answers,
   onAnswer,
   onBack,
+  onContinue,
   onFinish,
 }: {
   index: number;
@@ -26,6 +27,7 @@ export function QuestionStep({
   answers: Record<string, Presence>;
   onAnswer: (signId: string, presence: Presence) => void;
   onBack: () => void;
+  onContinue: () => void;
   onFinish: () => void;
 }) {
   const copy = t(lang);
@@ -33,13 +35,16 @@ export function QuestionStep({
   const sign = SIGNS[index];
   const selected = answers[sign.id];
 
-  const choices: { value: Presence; label: string; variant: "default" | "outline" }[] = [
-    { value: "yes", label: copy.yes, variant: "default" },
-    { value: "no", label: copy.no, variant: "outline" },
-    { value: "unsure", label: copy.unsure, variant: "outline" },
+  // All three are equal choices, so all three are outlined. Filling one would read as already
+  // selected, which is exactly the wrong signal on a question about heavy bleeding.
+  const choices: { value: Presence; label: string }[] = [
+    { value: "yes", label: copy.yes },
+    { value: "no", label: copy.no },
+    { value: "unsure", label: copy.unsure },
   ];
 
   const progress = ((index + 1) / SIGNS.length) * 100;
+  const isLast = index + 1 === SIGNS.length;
 
   return (
     <section aria-labelledby="question-heading">
@@ -82,7 +87,7 @@ export function QuestionStep({
             <li key={choice.value}>
               <Button
                 type="button"
-                variant={selected === choice.value ? "default" : choice.variant}
+                variant={selected === choice.value ? "default" : "outline"}
                 aria-pressed={selected === choice.value}
                 className="h-14 w-full text-lg"
                 onClick={() => onAnswer(sign.id, choice.value)}
@@ -94,13 +99,22 @@ export function QuestionStep({
         </ul>
       </motion.article>
 
-      <footer className="mt-8 flex items-center justify-between gap-3">
-        <Button type="button" variant="ghost" onClick={onBack}>
-          ← {copy.back}
-        </Button>
-        <Button type="button" variant="ghost" onClick={onFinish}>
-          {copy.skipRest}
-        </Button>
+      <footer className="mt-8 space-y-4">
+        <nav className="flex items-center justify-between gap-3" aria-label="Question navigation">
+          <Button type="button" variant="ghost" onClick={onBack}>
+            ← {copy.back}
+          </Button>
+          {/* Answering already advances; Continue is for moving past a question the family cannot
+              judge, and for stepping forward again after going Back. */}
+          <Button type="button" variant="secondary" onClick={onContinue}>
+            {isLast ? copy.seeResult : copy.continue} →
+          </Button>
+        </nav>
+        <p className="text-center">
+          <Button type="button" variant="link" className="text-muted-foreground" onClick={onFinish}>
+            {copy.skipRest}
+          </Button>
+        </p>
       </footer>
     </section>
   );

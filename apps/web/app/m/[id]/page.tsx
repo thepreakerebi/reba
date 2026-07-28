@@ -197,6 +197,11 @@ export default function MotherPage({ params }: { params: Promise<{ id: string }>
           onBack={() =>
             setStep(step.index === 0 ? { name: "mode" } : { name: "questions", index: step.index - 1 })
           }
+          onContinue={() =>
+            step.index + 1 < SIGNS.length
+              ? setStep({ name: "questions", index: step.index + 1 })
+              : submit.mutate(answers)
+          }
           onFinish={() => submit.mutate(answers)}
         />
       ) : verdict ? (
